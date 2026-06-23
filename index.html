@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Management System</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f4f4;
+    padding:20px;
+    transition:0.3s;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.controls{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+}
+
+input,select,button{
+    padding:10px;
+}
+
+#studentForm{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+}
+
+#studentForm input{
+    flex:1;
+}
+
+button{
+    cursor:pointer;
+    border:none;
+}
+
+.addBtn{
+    background:#2196f3;
+    color:white;
+}
+
+.editBtn{
+    background:green;
+    color:white;
+    padding:6px 10px;
+}
+
+.deleteBtn{
+    background:red;
+    color:white;
+    padding:6px 10px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:center;
+}
+
+th{
+    background:#333;
+    color:white;
+}
+
+#message{
+    margin-bottom:15px;
+    font-weight:bold;
+}
+
+.success{
+    color:green;
+}
+
+.error{
+    color:red;
+}
+
+.dark{
+    background:#1e1e1e;
+    color:white;
+}
+
+.dark table{
+    background:#333;
+    color:white;
+}
+
+.dark input,
+.dark select{
+    background:#444;
+    color:white;
+    border:1px solid #666;
+}
+
+.dark th{
+    background:black;
+}
+
+@media(max-width:768px){
+
+    #studentForm{
+        flex-direction:column;
+    }
+
+    .controls{
+        flex-direction:column;
+    }
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>Student Management System</h1>
+
+<div id="message"></div>
+
+<div class="controls">
+
+<input
+type="text"
+id="search"
+placeholder="Search Student">
+
+<select id="sort">
+
+<option value="">Sort By</option>
+
+<option value="asc">
+Name A-Z
+</option>
+
+<option value="desc">
+Name Z-A
+</option>
+
+</select>
+
+<button id="themeBtn">
+Dark Mode
+</button>
+
+</div>
+
+<form id="studentForm">
+
+<input
+type="text"
+id="name"
+placeholder="Enter Name">
+
+<input
+type="number"
+id="age"
+placeholder="Enter Age">
+
+<input
+type="text"
+id="course"
+placeholder="Enter Course">
+
+<button
+class="addBtn"
+type="submit">
+
+Save Student
+
+</button>
+
+</form>
+
+<table>
+
+<thead>
+
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Age</th>
+<th>Course</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="studentTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+<script>
+
+const form =
+document.getElementById("studentForm");
+
+const table =
+document.getElementById("studentTable");
+
+const search =
+document.getElementById("search");
+
+const sort =
+document.getElementById("sort");
+
+let students =
+JSON.parse(
+localStorage.getItem("students")
+) || [];
+
+let editId = null;
+
+displayStudents();
+
+function saveStorage(){
+
+    localStorage.setItem(
+        "students",
+        JSON.stringify(students)
+    );
+}
+
+function showMessage(msg,type){
+
+    const message =
+    document.getElementById("message");
+
+    message.innerText = msg;
+    message.className = type;
+
+    setTimeout(()=>{
+        message.innerText="";
+    },3000);
+}
+
+form.addEventListener(
+"submit",
+function(e){
+
+e.preventDefault();
+
+const name =
+document.getElementById("name")
+.value.trim();
+
+const age =
+document.getElementById("age")
+.value.trim();
+
+const course =
+document.getElementById("course")
+.value.trim();
+
+if(
+name==="" ||
+age==="" ||
+course===""){
+
+showMessage(
+"All fields required",
+"error"
+);
+
+return;
+}
+
+if(age<1 || age>100){
+
+showMessage(
+"Age must be between 1 and 100",
+"error"
+);
+
+return;
+}
+
+if(editId){
+
+const index =
+students.findIndex(
+s=>s.id===editId
+);
+
+students[index]={
+id:editId,
+name,
+age,
+course
+};
+
+showMessage(
+"Student Updated",
+"success"
+);
+
+editId=null;
+
+}
+else{
+
+const student={
+
+id:Date.now(),
+
+name,
+
+age,
+
+course
+
+};
+
+students.push(student);
+
+showMessage(
+"Student Added",
+"success"
+);
+
+}
+
+saveStorage();
+
+displayStudents();
+
+form.reset();
+
+});
+
+function displayStudents(
+data = students
+){
+
+table.innerHTML="";
+
+data.forEach(student=>{
+
+table.innerHTML +=
+
+`
+<tr>
+
+<td>${student.id}</td>
+
+<td>${student.name}</td>
+
+<td>${student.age}</td>
+
+<td>${student.course}</td>
+
+<td>
+
+<button
+class="editBtn"
+onclick="editStudent(${student.id})">
+
+Edit
+
+</button>
+
+<button
+class="deleteBtn"
+onclick="deleteStudent(${student.id})">
+
+Delete
+
+</button>
+
+</td>
+
+</tr>
+`;
+
+});
+}
+
+function deleteStudent(id){
+
+students =
+students.filter(
+student=>student.id!==id
+);
+
+saveStorage();
+
+displayStudents();
+
+showMessage(
+"Student Deleted",
+"success"
+);
+
+}
+
+function editStudent(id){
+
+const student =
+students.find(
+s=>s.id===id
+);
+
+document.getElementById("name")
+.value=student.name;
+
+document.getElementById("age")
+.value=student.age;
+
+document.getElementById("course")
+.value=student.course;
+
+editId=id;
+
+}
+
+search.addEventListener(
+"keyup",
+function(){
+
+const value =
+this.value.toLowerCase();
+
+const filtered =
+students.filter(student=>
+
+student.name
+.toLowerCase()
+.includes(value)
+
+);
+
+displayStudents(filtered);
+
+});
+
+sort.addEventListener(
+"change",
+function(){
+
+if(this.value==="asc"){
+
+students.sort((a,b)=>
+
+a.name.localeCompare(
+b.name
+)
+
+);
+
+}
+else if(
+this.value==="desc"
+){
+
+students.sort((a,b)=>
+
+b.name.localeCompare(
+a.name
+)
+
+);
+
+}
+
+displayStudents();
+
+saveStorage();
+
+});
+
+document
+.getElementById("themeBtn")
+.addEventListener(
+"click",
+()=>{
+
+document.body
+.classList.toggle("dark");
+
+});
+
+</script>
+
+</body>
+</html>
